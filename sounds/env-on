@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "environmental systems online" | /home/pi/bin/sounds/fembot

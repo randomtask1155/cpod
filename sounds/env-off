@@ -1,0 +1,6 @@
+#!/bin/bash
+
+
+echo "ALERT! environmental systems disabled" | /home/pi/bin/sounds/fembot
+echo "O 2 levels at 30 percent" | /home/pi/bin/sounds/fembot
+echo "recommend repairing environmental systems" | /home/pi/bin/sounds/fembot
