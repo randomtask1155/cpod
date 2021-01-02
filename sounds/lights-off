@@ -1,0 +1,4 @@
+#!/bin/bash
+
+
+echo "ALERT! power failure" | /home/pi/bin/sounds/fembot

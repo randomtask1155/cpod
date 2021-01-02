@@ -1,20 +1,16 @@
 #!/usr/bin/python3
+import RPi.GPIO as GPIO
+import neopixel
+import board
 import time
 import os
 
-from board import SCL, SDA
-import busio
-from adafruit_neotrellis.neotrellis import NeoTrellis
-from random import randrange
+GPIO.setmode(GPIO.BCM)
+switchPin = 13
+GPIO.setup(switchPin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-# create the i2c object for the trellis
-i2c_bus = busio.I2C(SCL, SDA)
-
-# create the trellis
-trellis = NeoTrellis(i2c_bus)
-
-# some color definitions
 OFF = (0, 0, 0)
+WHITE = (255,255,255)
 RED = (255, 0, 0)
 YELLOW = (255, 150, 0)
 GREEN = (0, 255, 0)
@@ -22,94 +18,50 @@ CYAN = (0, 255, 255)
 BLUE = (0, 0, 255)
 PURPLE = (180, 0, 255)
 
-soundDir = "/home/pi/bin/sounds/effects/"
-soundMap = {0: soundDir + 'power-on.wav',
-            1: soundDir + 'lazer.wav',
-            2: soundDir + 'explosion.wav',
-            3: soundDir + 'scanning.wav',
-            4: soundDir + 'bobbing-chiptone.wav',
-            5: soundDir + 'boom.wav',
-            6: soundDir + 'warp.wav',
-            7: soundDir + 'ngoat.wav',
-            8: soundDir + 'cat.wav',
-            9: soundDir + 'charging-laser.wav',
-            10: soundDir + 'space-sweep.wav',
-            11: soundDir + 'yay.wav',
-            12: soundDir + 'laser-shoot.wav',
-            13: soundDir + 'helium.wav',
-            14: soundDir + 'funny-boing.wav',
-            15: soundDir + 'girl-scream.wav'}
 
-ledMap = {0: False,
-          1: False,
-          2: False,
-          3: False,
-          4: False,
-          5: False,
-          6: False,
-          7: False,
-          8: False,
-          9: False,
-          10: False,
-          11: False,
-          12: False,
-          13: False,
-          14: False,
-          15: False}
+ledStatus = False
+defaultColor = WHITE
+currentColor = defaultColor
+defaultBrightness = 0.4
+pixel_pin = board.D12
+num_pixels = 77
 
-colorMap = { 0: RED,
-             1: YELLOW,
-             2: GREEN,
-             3: CYAN,
-             4: BLUE,
-             5: PURPLE}
+pixels = neopixel.NeoPixel(
+    pixel_pin, num_pixels, brightness=defaultBrightness, auto_write=True
+)
 
-def playSound(event):
-    os.system("play " + soundMap[event.number])
+def init_seq():
+    pixels.fill(WHITE)
+    pixels.show()
+    time.sleep(0.2)
+    pixels.fill(RED)
+    time.sleep(0.2)
+    pixels.fill(YELLOW)
+    time.sleep(0.2)
+    pixels.fill(GREEN)
+    time.sleep(0.2)
+    pixels.fill(CYAN)
+    time.sleep(0.2)
+    pixels.fill(PURPLE)
+    time.sleep(0.2)
+    pixels.fill(BLUE)
+    time.sleep(0.2)
+    pixels.fill(OFF)
 
-def toggleLED(event):
-    if ledMap[event.number]:
-        trellis.pixels[event.number] = OFF 
-        ledMap[event.number] = False
-    else:
-        trellis.pixels[event.number] = colorMap[randrange(6)]
-        ledMap[event.number] = True
-        
+init_seq()
 
-# this will be called when button events are received
-def blink(event):
-    if event.edge == NeoTrellis.EDGE_RISING:
-        toggleLED(event)
-        if ledMap[event.number]:
-            playSound(event)
-
-def initPurple():
-    for i in range(16):
-        trellis.pixels[i] = PURPLE
-        time.sleep(0.05)
-    for i in range(16):
-        trellis.pixels[i] = OFF
-        time.sleep(0.05)
- 
-
-for i in range(16):
-    # activate rising edge events on all keys
-    trellis.activate_key(i, NeoTrellis.EDGE_RISING)
-    # activate falling edge events on all keys
-    trellis.activate_key(i, NeoTrellis.EDGE_FALLING)
-    # set all keys to trigger the blink callback
-    trellis.callbacks[i] = blink
-
-    # cycle the LEDs on startup
-    trellis.pixels[i] = PURPLE
-    time.sleep(0.05)
-
-for i in range(16):
-    trellis.pixels[i] = OFF
-    time.sleep(0.05)
 
 while True:
-    # call the sync function call any triggered callbacks
-    trellis.sync()
-    # the trellis can only be read every 17 millisecons or so
-    time.sleep(0.02)
+    input_state = GPIO.input(switchPin)
+    if input_state == True:
+        if not ledStatus:
+            ledStatus = True
+            pixels.fill(currentColor)
+            os.system("play /home/pi/bin/sounds/effects/power-on.wav")
+    else:
+        if ledStatus:
+            init_seq()
+            ledStatus = False 
+            os.system("/home/pi/bin/sounds/lights-off")
+    time.sleep(.3)
+
