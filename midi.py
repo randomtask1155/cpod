@@ -60,6 +60,27 @@ pixels = neopixel.NeoPixel(
     pixel_pin, num_pixels, brightness=defaultBrightness, auto_write=True
 )
 
+secretMap = {"light": False,
+             "midi": False,
+             0: False,
+             3: False,
+             12: False,
+             15: False}
+
+def clearSecret():
+    for key in secretMap:
+        secretMap[key] = False
+
+def check_secret():
+    found = True
+    for key in secretMap:
+        if not secretMap[key]:
+            found = False
+    if found:
+        clearSecret()
+        os.system("/home/pi/bin/sounds/play-secret")
+        
+
 soundDir = "/home/pi/bin/sounds/effects/"
 soundMap = {0: soundDir + 'power-on.wav',
             1: soundDir + 'lazer.wav',
@@ -151,12 +172,14 @@ def toggle_lights():
             pixels.fill(currentColor)
             initLights()
             os.system("play /home/pi/bin/sounds/effects/power-on.wav")
+            secretMap["light"] = True
     else:
         if ledStatus:
             init_led_seq()
             ledStatus = False 
             initPurple()
             os.system("/home/pi/bin/sounds/lights-off")
+            secretMap["light"] = False
 
 ################################### 
 ## NEO TRELLIS FUNCTIONS
@@ -169,11 +192,13 @@ def toggle_music():
         if not musicStatus:
             initPurple()
             musicStatus = True
+            secretMap["midi"] = True
     else:
         if musicStatus:
             musicStatus = False
             if ledStatus:
                 initLights()
+                secretMap["midi"] = False
 
 
 
@@ -218,6 +243,8 @@ def blink(event):
             toggleLED(event)
             if ledMap[event.number]:
                 playSound(event)
+                if event.number in secretMap.keys():
+                    secretMap[event.number] = True
         else: 
             if midiMode == ledMode:
                 checkMidiState()
@@ -259,9 +286,11 @@ while True:
     toggle_lights()
     toggle_music()
     toggle_midistate()
+    check_secret()
     # call the sync function call any triggered callbacks
     trellis.sync()
     # the trellis can only be read every 17 millisecons or so
     time.sleep(0.3)
+
 
 
